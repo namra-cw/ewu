@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { buildPaginationArgs, type OffsetPaginationDTO } from '@mediastar/shared';
+import { buildPaginationArgs } from '@mediastar/shared';
 import { DatabaseService, Prisma } from '@mediastar/database';
 import { type CasesQueryDTO } from './dtos';
 import {
@@ -12,6 +12,7 @@ import {
   IGroupedCasesByStage,
   IUpdateCaseRequest,
 } from './interfaces/case.interface';
+import { buildCasesWhere } from './utils/cases-filter.util';
 import { buildCasesOrderBy } from './utils/cases-order.util';
 
 const CASE_MUTATION_SELECT = {
@@ -160,22 +161,18 @@ export class CaseRepository {
   }
 
   public async findMany(
-    query: OffsetPaginationDTO & { stageId?: number },
+    query: CasesQueryDTO,
   ): Promise<[ICaseMutationResult[], number]> {
     const { skip, take } = buildPaginationArgs(query);
-    const where: Prisma.CaseWhereInput = {
-      ...(query.stageId != null && { stageId: query.stageId }),
-    };
 
     const [data, total] = await Promise.all([
       this.db.case.findMany({
-        where,
         select: CASE_MUTATION_SELECT,
         skip,
         take,
         orderBy: { id: query.sort ?? 'desc' },
       }),
-      this.db.case.count({ where }),
+      this.db.case.count(),
     ]);
 
     return [data as ICaseMutationResult[], total];
@@ -199,6 +196,7 @@ export class CaseRepository {
           case: {
             select: CASE_MUTATION_SELECT,
             take: caseLimit,
+            where: buildCasesWhere(query),
             orderBy: buildCasesOrderBy(query.orderBy, query.sort ?? 'desc'),
           },
         },
