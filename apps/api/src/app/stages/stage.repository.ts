@@ -7,6 +7,7 @@ import type { IStageMutationResult } from './interfaces/stage.interface';
 const STAGE_MUTATION_SELECT = {
   id: true,
   stageTitle: true,
+  caseCount: true,
 } satisfies Prisma.StagesSelect;
 
 interface CreateStageParams {

@@ -20,7 +20,11 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos';
 import { CasesService } from './cases.service';
-import { ICaseMutationResult } from './interfaces/case.interface';
+import {
+  ICaseDisplayProperty,
+  ICaseDisplayResult,
+  ICaseMutationResult,
+} from './interfaces/case.interface';
 
 @ApiTags('Cases')
 @ApiStandardErrors()
@@ -99,8 +103,29 @@ export class CasesController {
   })
   getAllByStages(
     @Query() query: CasesQueryDTO,
-  ): Promise<OffsetPaginatedResultVM<{ stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }>> {
+  ): Promise<OffsetPaginatedResultVM<{ stageId: number | null; stageTitle: string | null; cases: ICaseDisplayResult[] }>> {
     return this.casesService.getAllCasesByAllStages(query);
+  }
+
+  @Get('display-properties-filter')
+  @ApiOperation({ summary: 'Get selectable case display properties' })
+  @ApiWrappedResponse({
+    description: 'Selectable case display properties',
+    dataSchema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          key: { type: 'string' },
+          label: { type: 'string' },
+          selected: { type: 'boolean' },
+        },
+        required: ['key', 'label', 'selected'],
+      },
+    },
+  })
+  displayPropertiesFilter(): Promise<ICaseDisplayProperty[]> {
+    return this.casesService.displayPropertiesFilter();
   }
 
   @Post()

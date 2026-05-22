@@ -4,7 +4,7 @@ import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import type { IRegister } from '../interfaces/register.interface';
 
 export class RegisterDTO implements IRegister {
-  @ApiProperty({ description: 'User email address', maxLength: 255, example: 'user@example.com' })
+  @ApiProperty({ description: 'User email address', maxLength: 255, example: 'pqr@domain.com' })
   @IsEmail()
   @MaxLength(255)
   readonly email!: string;

@@ -11,7 +11,7 @@ export class InvitationResponseVM implements IInvitationResponse {
   @ApiProperty({ description: 'User ID of the invited user', example: 1 })
   readonly id!: number;
 
-  @ApiProperty({ description: 'Invited email address', example: 'user@example.com' })
+  @ApiProperty({ description: 'Invited email address', example: 'pqr@domain.com' })
   readonly email!: string;
 
   @ApiProperty({ description: 'First name of the invited user', example: 'John', nullable: true })
@@ -43,7 +43,7 @@ export class InvitationResponseVM implements IInvitationResponse {
 }
 
 export class InviteValidationResponseVM implements IInviteValidationResponse {
-  @ApiProperty({ description: 'Invited email address', example: 'user@example.com' })
+  @ApiProperty({ description: 'Invited email address', example: 'pqr@domain.com' })
   readonly email!: string;
 
   @ApiProperty({ description: 'First name of the invited user', example: 'John', nullable: true })

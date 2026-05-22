@@ -52,8 +52,9 @@ export class StageController {
             properties: {
               id: { type: 'number' },
               stageTitle: { type: 'string' },
+              caseCount: { type: 'number' },
             },
-            required: ['id', 'stageTitle'],
+            required: ['id', 'stageTitle', 'caseCount'],
           },
         },
         total: { type: 'number' },
@@ -87,8 +88,9 @@ export class StageController {
       properties: {
         id: { type: 'number' },
         stageTitle: { type: 'string' },
+        caseCount: { type: 'number' },
       },
-      required: ['id', 'stageTitle'],
+      required: ['id', 'stageTitle', 'caseCount'],
     },
   })
   @ApiResponse({
@@ -122,8 +124,9 @@ export class StageController {
       properties: {
         id: { type: 'number' },
         stageTitle: { type: 'string' },
+        caseCount: { type: 'number' },
       },
-      required: ['id', 'stageTitle'],
+      required: ['id', 'stageTitle', 'caseCount'],
     },
   })
   @ApiResponse({

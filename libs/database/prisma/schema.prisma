@@ -325,6 +325,7 @@ model User {
 model Stages {
   id   Int    @id @default(autoincrement())
   stageTitle String @db.VarChar(100)
+  caseCount Int @default(0) @map("case_count")
 
   case Case[] @relation("CaseStages")
 
@@ -507,6 +508,8 @@ model Case {
   stage   Stages? @relation("CaseStages", fields: [stageId], references: [id])
 
   dueDate DateTime?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   casePriority String?
   caseSource CaseSource

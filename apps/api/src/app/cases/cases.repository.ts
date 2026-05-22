@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { buildPaginationArgs, type OffsetPaginationDTO } from '@mediastar/shared';
 import { DatabaseService, Prisma } from '@mediastar/database';
 import {
+  CASE_DISPLAY_PROPERTIES,
+  type CaseDisplayPropertyKey,
+  type ICaseDisplayProperty,
+  type ICaseDisplayResult,
   ICaseMutationResult,
   ICreateCaseRequest,
   IGroupedCasesByStage,
@@ -39,10 +43,12 @@ const CASE_MUTATION_SELECT = {
     select: {
       id: true,
       stageTitle: true,
+      caseCount: true,
     },
   },
 
   dueDate: true,
+  createdAt: true,
   casePriority: true,
   caseSource: true,
   priority: true,
@@ -53,6 +59,96 @@ const DEFAULT_STAGE_TITLE = 'New';
 @Injectable()
 export class CaseRepository {
   constructor(private readonly db: DatabaseService) {}
+
+  private toDisplayCase(
+    caseRecord: ICaseMutationResult,
+    displayProperties: CaseDisplayPropertyKey[],
+  ): ICaseDisplayResult {
+    return displayProperties.reduce<ICaseDisplayResult>((displayCase, property) => {
+      if (property === 'id') {
+        displayCase.id = caseRecord.id;
+      }
+
+      if (property === 'subjectName') {
+        displayCase.subjectName = caseRecord.subjectName;
+      }
+
+      if (property === 'age') {
+        displayCase.age = caseRecord.age;
+      }
+
+      if (property === 'incidentType') {
+        displayCase.incidentType = caseRecord.incidentType;
+      }
+
+      if (property === 'incidentDate') {
+        displayCase.incidentDate = caseRecord.incidentDate;
+      }
+
+      if (property === 'caseSummary') {
+        displayCase.caseSummary = caseRecord.caseSummary;
+      }
+
+      if (property === 'address911') {
+        displayCase.address911 = caseRecord.address911;
+      }
+
+      if (property === 'callTime911') {
+        displayCase.callTime911 = caseRecord.callTime911;
+      }
+
+      if (property === 'state') {
+        displayCase.state = caseRecord.state;
+      }
+
+      if (property === 'city') {
+        displayCase.city = caseRecord.city;
+      }
+
+      if (property === 'zip') {
+        displayCase.zip = caseRecord.zip;
+      }
+
+      if (property === 'arrestDate') {
+        displayCase.arrestDate = caseRecord.arrestDate;
+      }
+
+      if (property === 'assignee') {
+        displayCase.assignee = caseRecord.assignee;
+      }
+
+      if (property === 'stageId') {
+        displayCase.stageId = caseRecord.stageId;
+      }
+
+      if (property === 'stage') {
+        displayCase.stage = caseRecord.stage;
+      }
+
+      if (property === 'dueDate') {
+        displayCase.dueDate = caseRecord.dueDate;
+      }
+
+      if (property === 'casePriority') {
+        displayCase.casePriority = caseRecord.casePriority;
+      }
+
+      if (property === 'caseSource') {
+        displayCase.caseSource = caseRecord.caseSource;
+
+      }
+
+      if (property === 'createdAt') {
+        displayCase.createdAt = caseRecord.createdAt;
+      }
+
+      if (property === 'priority') {
+        displayCase.priority = caseRecord.priority;
+      }
+
+      return displayCase;
+    }, {});
+  }
 
   public async findById(id: string): Promise<ICaseMutationResult | null> {
     return this.db.case.findUnique({
@@ -84,16 +180,20 @@ export class CaseRepository {
   }
 
   public async getAllCasesByAllStages(
-    query: OffsetPaginationDTO & { caseLimit?: number },
+    query: OffsetPaginationDTO & { caseLimit?: number; displayPropertiesFilter?: CaseDisplayPropertyKey[] },
   ): Promise<[IGroupedCasesByStage[], number]> {
     const { skip, take } = buildPaginationArgs(query);
     const caseLimit = query.caseLimit ?? take;
+    const displayProperties = query.displayPropertiesFilter?.length
+      ? query.displayPropertiesFilter
+      : CASE_DISPLAY_PROPERTIES.filter((property) => property.selected).map((property) => property.key);
 
     const [stagesWithCases, total] = await Promise.all([
       this.db.stages.findMany({
         select: {
           id: true,
           stageTitle: true,
+          caseCount: true,
           case: {
             select: CASE_MUTATION_SELECT,
             take: caseLimit,
@@ -111,7 +211,10 @@ export class CaseRepository {
       stagesWithCases.map((stage) => ({
         stageId: stage.id,
         stageTitle: stage.stageTitle,
-        cases: stage.case as ICaseMutationResult[],
+        caseCount: stage.caseCount,
+        cases: (stage.case as ICaseMutationResult[]).map((caseRecord) =>
+          this.toDisplayCase(caseRecord, displayProperties),
+        ),
       })),
       total,
     ];
@@ -127,11 +230,26 @@ export class CaseRepository {
   }
 
   public async moveCaseToStage(caseId: string, stageId: number): Promise<ICaseMutationResult> {
-    return this.db.case.update({
-      where: { id: caseId },
-      data: { stageId },
-      select: CASE_MUTATION_SELECT,
-    }) as Promise<ICaseMutationResult>;
+    const oldCase = await this.db.case.findUnique({ where: { id: caseId }, select: { stageId: true } });
+    if (oldCase?.stageId && oldCase.stageId !== stageId) {
+      await this.db.$transaction([
+        this.db.stages.update({ where: { id: oldCase.stageId }, data: { caseCount: { decrement: 1 } } }),
+        this.db.stages.update({ where: { id: stageId }, data: { caseCount: { increment: 1 } } }),
+        this.db.case.update({
+          where: { id: caseId },
+          data: { stageId },
+        })
+      ]);
+    } else if (!oldCase?.stageId) {
+      await this.db.$transaction([
+        this.db.stages.update({ where: { id: stageId }, data: { caseCount: { increment: 1 } } }),
+        this.db.case.update({
+          where: { id: caseId },
+          data: { stageId },
+        })
+      ]);
+    }
+    return this.findById(caseId) as Promise<ICaseMutationResult>;
   }
 
   public async create(params: ICreateCaseRequest): Promise<ICaseMutationResult> {
@@ -165,9 +283,14 @@ export class CaseRepository {
     const stage =
       selectedStage ??
       (await this.db.stages.create({
-        data: { stageTitle: DEFAULT_STAGE_TITLE },
+        data: { stageTitle: DEFAULT_STAGE_TITLE, caseCount: 0 },
         select: { id: true },
       }));
+
+    await this.db.stages.update({
+      where: { id: stage.id },
+      data: { caseCount: { increment: 1 } },
+    });
 
     return this.db.case.create({
       data: {
@@ -198,6 +321,7 @@ export class CaseRepository {
   }
 
   public async update(id: string, params: IUpdateCaseRequest): Promise<ICaseMutationResult> {
+    const oldCase = await this.db.case.findUnique({ where: { id }, select: { stageId: true } });
     let assigneeSet: Array<{ id: number }> | undefined;
     if (params.assigneeIds !== undefined) {
       const assigneeIds = [...new Set(params.assigneeIds)];
@@ -230,7 +354,7 @@ export class CaseRepository {
       }
     }
 
-    return this.db.case.update({
+    const updatedCase = await this.db.case.update({
       where: { id },
       data: {
         ...(params.subjectName !== undefined && { subjectName: params.subjectName }),
@@ -255,13 +379,36 @@ export class CaseRepository {
             : { stage: { connect: { id: params.stageId } } })),
       },
       select: CASE_MUTATION_SELECT,
-    }) as Promise<ICaseMutationResult>;
+    }) as unknown as ICaseMutationResult;
+
+    if (oldCase && oldCase.stageId !== updatedCase.stageId) {
+      if (oldCase.stageId) {
+        await this.db.stages.update({ where: { id: oldCase.stageId }, data: { caseCount: { decrement: 1 } } });
+      }
+      if (updatedCase.stageId) {
+        await this.db.stages.update({ where: { id: updatedCase.stageId }, data: { caseCount: { increment: 1 } } });
+      }
+      return this.findById(id) as Promise<ICaseMutationResult>;
+    }
+
+    return updatedCase;
   }
 
   public async delete(id: string): Promise<ICaseMutationResult> {
-    return this.db.case.delete({
+    const deletedCase = await this.db.case.delete({
       where: { id },
       select: CASE_MUTATION_SELECT,
-    }) as Promise<ICaseMutationResult>;
+    }) as unknown as ICaseMutationResult;
+    if (deletedCase.stageId) {
+      await this.db.stages.update({
+        where: { id: deletedCase.stageId },
+        data: { caseCount: { decrement: 1 } },
+      });
+    }
+    return deletedCase;
+  }
+
+  public async displayPropertiesFilter(): Promise<ICaseDisplayProperty[]> {
+    return [...CASE_DISPLAY_PROPERTIES];
   }
 }

@@ -6,7 +6,7 @@ import type { IForgotPassword } from '../interfaces/forgot-password.interface';
 export class ForgotPasswordDTO implements IForgotPassword {
   @ApiProperty({
     description: 'Email address associated with the account',
-    example: 'user@example.com',
+    example: 'pqr@domain.com',
   })
   @IsEmail()
   readonly email!: string;

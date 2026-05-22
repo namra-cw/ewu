@@ -17,7 +17,7 @@ import type { ISendInviteRequest } from '../interfaces/invitation.interface';
 export class SendInviteDTO implements ISendInviteRequest {
   @ApiProperty({
     description: 'Email address to send the invitation to',
-    example: 'user@example.com',
+    example: 'pqr@domain.com',
   })
   @IsEmail()
   readonly email!: string;

@@ -2,7 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { buildPaginatedResult, type OffsetPaginatedResultVM } from '@mediastar/shared';
 
 import { CaseRepository } from './cases.repository';
-import { ICaseMutationResult } from './interfaces/case.interface';
+import {
+  ICaseDisplayProperty,
+  ICaseDisplayResult,
+  ICaseMutationResult,
+} from './interfaces/case.interface';
 import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos';
 
 const CASE_NOT_FOUND = 'Case not found';
@@ -24,11 +28,15 @@ export class CasesService {
     OffsetPaginatedResultVM<{
       stageId: number | null;
       stageTitle: string | null;
-      cases: ICaseMutationResult[];
+      cases: ICaseDisplayResult[];
     }>
   > {
     const [data, total] = await this.caseRepository.getAllCasesByAllStages(query);
     return buildPaginatedResult(data, total, query);
+  }
+
+  async displayPropertiesFilter(): Promise<ICaseDisplayProperty[]> {
+    return this.caseRepository.displayPropertiesFilter();
   }
 
   async create(dto: CreateCaseDTO): Promise<ICaseMutationResult> {

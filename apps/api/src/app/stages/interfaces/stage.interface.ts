@@ -5,4 +5,5 @@ export interface ICreateStageRequest {
 export interface IStageMutationResult {
   id: number;
   stageTitle: string;
+  caseCount: number;
 }
