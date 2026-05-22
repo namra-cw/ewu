@@ -1,8 +1,8 @@
 export interface ICreateStageRequest {
-	stageTitle: string;
+  stageTitle: string;
 }
 
 export interface IStageMutationResult {
-	id: number;
-	stageTitle: string;
+  id: number;
+  stageTitle: string;
 }

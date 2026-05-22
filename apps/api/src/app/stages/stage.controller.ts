@@ -1,7 +1,13 @@
 import { Permissions } from '@mediastar/auth';
-import { Auditable, AuditAction, ModuleName as M, perm, PermissionAction as A } from '@mediastar/core';
+import {
+  Auditable,
+  AuditAction,
+  ModuleName as M,
+  perm,
+  PermissionAction as A,
+} from '@mediastar/core';
 import { ApiStandardErrors, ApiWrappedResponse, ErrorResponseVM } from '@mediastar/shared';
-import { Body, Controller, Delete, HttpStatus, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 
@@ -13,73 +19,97 @@ import { StageService } from './stage.service';
 @ApiStandardErrors()
 @Controller('stage')
 export class StageController {
-	constructor(private readonly stageService: StageService) {}
+  constructor(private readonly stageService: StageService) {}
 
-	@Post()
-	@Permissions(perm(M.Stages, A.Create))
-	@Auditable({
-		action: AuditAction.Create,
-		entityType: 'stage',
-		descriptionTemplate: '{actor} created stage',
-		dtoClass: CreateStageDTO,
-	})
-
-	@ApiOperation({ summary: 'Create a stage' })
-	@ApiWrappedResponse({
-		description: 'Created stage',
-		status: 201,
-		dataSchema: {
-			type: 'object',
-			properties: {
-				id: { type: 'number' },
-				stageTitle: { type: 'string' },
-			},
-			required: ['id', 'stageTitle'],
+  @Get()
+  @Permissions(perm(M.Stages, A.Read))
+  @ApiOperation({ summary: 'Get all stages' })
+  @ApiWrappedResponse({
+	description: 'List of stages',
+	dataSchema: {
+	  type: 'array',
+	  items: {
+		type: 'object',
+		properties: {
+		  id: { type: 'number' },
+		  stageTitle: { type: 'string' },
 		},
-	})
+		required: ['id', 'stageTitle'],
+	  },
+	},
+  })
+  getAllStages(): Promise<IStageMutationResult[]> {
+	return this.stageService.getAllStages();
+  }
 
-	@ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Validation error', type: ErrorResponseVM })
-	@ApiResponse({
-		status: HttpStatus.CONFLICT,
-		description: 'Stage title already exists',
-		type: ErrorResponseVM,
-	})
-	create(@Body() dto: CreateStageDTO): Promise<IStageMutationResult> {
-		return this.stageService.create(dto);
-	}
+  @Post()
+  @Permissions(perm(M.Stages, A.Create))
+  @Auditable({
+    action: AuditAction.Create,
+    entityType: 'stage',
+    descriptionTemplate: '{actor} created stage',
+    dtoClass: CreateStageDTO,
+  })
+  @ApiOperation({ summary: 'Create a stage' })
+  @ApiWrappedResponse({
+    description: 'Created stage',
+    status: 201,
+    dataSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+        stageTitle: { type: 'string' },
+      },
+      required: ['id', 'stageTitle'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Validation error',
+    type: ErrorResponseVM,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Stage title already exists',
+    type: ErrorResponseVM,
+  })
+  create(@Body() dto: CreateStageDTO): Promise<IStageMutationResult> {
+    return this.stageService.create(dto);
+  }
 
-	@Delete(':id')
-	@Permissions(perm(M.Stages, A.Delete))
-	@Auditable({
-		action: AuditAction.Delete,
-		entityType: 'stage',
-		entityIdExtractor: (req: Request) => req.params['id'] as string,
-		resourceNameExtractor: (req: Request) => `Stage #${req.params['id']}`,
-		descriptionTemplate: '{actor} deleted {resourceName}',
-	})
-
-	@ApiOperation({ summary: 'Delete a stage' })
-	@ApiWrappedResponse({
-		description: 'Deleted stage',
-		dataSchema: {
-			type: 'object',
-			properties: {
-				id: { type: 'number' },
-				stageTitle: { type: 'string' },
-			},
-			required: ['id', 'stageTitle'],
-		},
-	})
-
-	@ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Stage not found', type: ErrorResponseVM })
-	@ApiResponse({
-		status: HttpStatus.BAD_REQUEST,
-		description: 'Cannot delete a stage that still has cases assigned',
-		type: ErrorResponseVM,
-	})
-	
-	@ApiParam({ name: 'id', description: 'Stage ID', type: Number })
-	remove(@Param('id', ParseIntPipe) id: number): Promise<IStageMutationResult> {
-		return this.stageService.remove(id);
-	}
+  @Delete(':id')
+  @Permissions(perm(M.Stages, A.Delete))
+  @Auditable({
+    action: AuditAction.Delete,
+    entityType: 'stage',
+    entityIdExtractor: (req: Request) => req.params['id'] as string,
+    resourceNameExtractor: (req: Request) => `Stage #${req.params['id']}`,
+    descriptionTemplate: '{actor} deleted {resourceName}',
+  })
+  @ApiOperation({ summary: 'Delete a stage' })
+  @ApiWrappedResponse({
+    description: 'Deleted stage',
+    dataSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+        stageTitle: { type: 'string' },
+      },
+      required: ['id', 'stageTitle'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Stage not found',
+    type: ErrorResponseVM,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Cannot delete a stage that still has cases assigned',
+    type: ErrorResponseVM,
+  })
+  @ApiParam({ name: 'id', description: 'Stage ID', type: Number })
+  remove(@Param('id', ParseIntPipe) id: number): Promise<IStageMutationResult> {
+    return this.stageService.remove(id);
+  }
 }

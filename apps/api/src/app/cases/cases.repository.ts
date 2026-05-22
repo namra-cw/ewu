@@ -40,7 +40,6 @@ const CASE_MUTATION_SELECT = {
     },
   },
 
-
   dueDate: true,
   casePriority: true,
   caseSource: true,
@@ -51,9 +50,7 @@ const DEFAULT_STAGE_TITLE = 'New';
 
 @Injectable()
 export class CaseRepository {
-  constructor(
-    private readonly db: DatabaseService,
-  ) {}
+  constructor(private readonly db: DatabaseService) {}
 
   public async findById(id: string): Promise<ICaseMutationResult | null> {
     return this.db.case.findUnique({
@@ -75,7 +72,9 @@ export class CaseRepository {
     }) as Promise<ICaseMutationResult[]>;
   }
 
-  public async getAllCasesByAllStages(): Promise<{ stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }[]> {
+  public async getAllCasesByAllStages(): Promise<
+    { stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }[]
+  > {
     const stagesWithCases = await this.db.stages.findMany({
       select: {
         id: true,

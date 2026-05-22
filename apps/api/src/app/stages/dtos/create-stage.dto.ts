@@ -9,7 +9,4 @@ export class CreateStageDTO implements ICreateStageRequest {
   @MinLength(2)
   @MaxLength(100)
   stageTitle!: string;
-
-  
-
 }
