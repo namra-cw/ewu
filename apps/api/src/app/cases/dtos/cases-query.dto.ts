@@ -5,6 +5,7 @@ import { Transform, Type } from 'class-transformer';
 import { IsArray, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 import { CASE_DISPLAY_PROPERTIES, type CaseDisplayPropertyKey } from '../interfaces/case.interface';
+import { CASE_ORDER_BY_FIELDS, type CaseOrderByField } from '../utils/cases-order.util';
 
 export class CasesQueryDTO extends OffsetPaginationDTO {
   @ApiPropertyOptional({ description: 'Filter cases by stage ID', example: 1 })
@@ -47,4 +48,14 @@ export class CasesQueryDTO extends OffsetPaginationDTO {
   @IsArray()
   @IsIn(CASE_DISPLAY_PROPERTIES.map((property) => property.key), { each: true })
   displayPropertiesFilter?: CaseDisplayPropertyKey[];
+
+  @ApiPropertyOptional({
+    description: 'Order grouped cases by created, priority, updated, or name',
+    enum: CASE_ORDER_BY_FIELDS,
+    example: 'created',
+  })
+  @IsOptional()
+  @IsIn(CASE_ORDER_BY_FIELDS)
+  @Type(() => String)
+  orderBy?: CaseOrderByField;
 }

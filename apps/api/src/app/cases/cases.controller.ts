@@ -75,6 +75,7 @@ export class CasesController {
           page: 1,
           limit: 10,
           sort: 'desc',
+            orderBy: 'created',
           caseLimit: 5,
           stageId: 2,
           displayPropertiesFilter: [

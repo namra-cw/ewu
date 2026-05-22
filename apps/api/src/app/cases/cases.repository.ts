@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { buildPaginationArgs, type OffsetPaginationDTO } from '@mediastar/shared';
 import { DatabaseService, Prisma } from '@mediastar/database';
+import { type CasesQueryDTO } from './dtos';
 import {
   CASE_DISPLAY_PROPERTIES,
   type CaseDisplayPropertyKey,
@@ -11,6 +12,7 @@ import {
   IGroupedCasesByStage,
   IUpdateCaseRequest,
 } from './interfaces/case.interface';
+import { buildCasesOrderBy } from './utils/cases-order.util';
 
 const CASE_MUTATION_SELECT = {
   id: true,
@@ -180,7 +182,7 @@ export class CaseRepository {
   }
 
   public async getAllCasesByAllStages(
-    query: OffsetPaginationDTO & { caseLimit?: number; displayPropertiesFilter?: CaseDisplayPropertyKey[] },
+    query: CasesQueryDTO,
   ): Promise<[IGroupedCasesByStage[], number]> {
     const { skip, take } = buildPaginationArgs(query);
     const caseLimit = query.caseLimit ?? take;
@@ -197,7 +199,7 @@ export class CaseRepository {
           case: {
             select: CASE_MUTATION_SELECT,
             take: caseLimit,
-            orderBy: { id: query.sort ?? 'desc' },
+            orderBy: buildCasesOrderBy(query.orderBy, query.sort ?? 'desc'),
           },
         },
         skip,
