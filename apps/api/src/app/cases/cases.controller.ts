@@ -16,7 +16,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos';
 import { CasesService } from './cases.service';
@@ -63,9 +63,32 @@ export class CasesController {
   ): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
     return this.casesService.getAllCases(query);
   }
-
-  @Get('by-stages')
+  
+  @Post('by-stages')
   @ApiOperation({ summary: 'Get cases by stages' })
+  @ApiBody({
+    type: CasesQueryDTO,
+    examples: {
+      default: {
+        summary: 'Sample grouped cases request',
+        value: {
+          page: 1,
+          limit: 10,
+          sort: 'desc',
+          caseLimit: 5,
+          stageId: 2,
+          displayPropertiesFilter: [
+            'id',
+            'subjectName',
+            'incidentType',
+            'stage',
+            'priority',
+            'createdAt',
+          ],
+        },
+      },
+    },
+  })
   @ApiWrappedResponse({
     description: 'Paginated cases grouped by stages',
     dataSchema: {
@@ -102,7 +125,7 @@ export class CasesController {
     },
   })
   getAllByStages(
-    @Query() query: CasesQueryDTO,
+    @Body() query: CasesQueryDTO,
   ): Promise<OffsetPaginatedResultVM<{ stageId: number | null; stageTitle: string | null; cases: ICaseDisplayResult[] }>> {
     return this.casesService.getAllCasesByAllStages(query);
   }
