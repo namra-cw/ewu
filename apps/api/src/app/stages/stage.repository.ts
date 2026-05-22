@@ -1,5 +1,6 @@
 import { DatabaseService, Prisma } from '@mediastar/database';
 import { Injectable } from '@nestjs/common';
+import { buildPaginationArgs, type OffsetPaginationDTO } from '@mediastar/shared';
 
 import type { IStageMutationResult } from './interfaces/stage.interface';
 
@@ -16,10 +17,20 @@ interface CreateStageParams {
 export class StageRepository {
   constructor(private readonly db: DatabaseService) {}
 
-  async getAllStages(): Promise<IStageMutationResult[]> {
-    return this.db.stages.findMany({ select: STAGE_MUTATION_SELECT }) as Promise<
-      IStageMutationResult[]
-    >;
+  async findMany(query: OffsetPaginationDTO): Promise<[IStageMutationResult[], number]> {
+    const { skip, take } = buildPaginationArgs(query);
+
+    const [data, total] = await Promise.all([
+      this.db.stages.findMany({
+        select: STAGE_MUTATION_SELECT,
+        skip,
+        take,
+        orderBy: { id: query.sort ?? 'desc' },
+      }),
+      this.db.stages.count(),
+    ]);
+
+    return [data as IStageMutationResult[], total];
   }
 
   async findById(id: number): Promise<IStageMutationResult | null> {

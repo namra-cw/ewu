@@ -1,4 +1,9 @@
-import { ApiStandardErrors, ApiWrappedResponse, ErrorResponseVM } from '@mediastar/shared';
+import {
+  ApiStandardErrors,
+  ApiWrappedResponse,
+  ErrorResponseVM,
+  type OffsetPaginatedResultVM,
+} from '@mediastar/shared';
 import {
   Body,
   Controller,
@@ -9,12 +14,11 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CreateCaseDTO } from './dtos/create-case.dto';
-import { DragCaseDTO } from './dtos/drag-case.dto';
-import { UpdateCaseDTO } from './dtos/update-case.dto';
+import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos';
 import { CasesService } from './cases.service';
 import { ICaseMutationResult } from './interfaces/case.interface';
 
@@ -25,36 +29,78 @@ export class CasesController {
   constructor(private readonly casesService: CasesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all cases grouped by stages' })
+  @ApiOperation({ summary: 'Get all cases' })
   @ApiWrappedResponse({
-    description: 'Cases grouped by stages',
+    description: 'Paginated list of cases',
     dataSchema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          stageId: { type: 'number', nullable: true },
-          stageTitle: { type: 'string', nullable: true },
-          cases: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                subjectName: { type: 'string' },
-              },
-              required: ['id', 'subjectName'],
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              subjectName: { type: 'string' },
             },
+            required: ['id', 'subjectName'],
           },
         },
-        required: ['stageId', 'stageTitle', 'cases'],
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        totalPages: { type: 'number' },
       },
+      required: ['data', 'total', 'page', 'limit', 'totalPages'],
     },
   })
-  getAllByStages(): Promise<
-    { stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }[]
-  > {
-    return this.casesService.getAllCasesByAllStages();
+  getAllCases(
+    @Query() query: CasesQueryDTO,
+  ): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
+    return this.casesService.getAllCases(query);
+  }
+
+  @Get('by-stages')
+  @ApiOperation({ summary: 'Get cases by stages' })
+  @ApiWrappedResponse({
+    description: 'Paginated cases grouped by stages',
+    dataSchema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              stageId: { type: 'number', nullable: true },
+              stageTitle: { type: 'string', nullable: true },
+              cases: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    subjectName: { type: 'string' },
+                  },
+                  required: ['id', 'subjectName'],
+                },
+              },
+            },
+            required: ['stageId', 'stageTitle', 'cases'],
+          },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+      required: ['data', 'total', 'page', 'limit', 'totalPages'],
+    },
+  })
+  getAllByStages(
+    @Query() query: CasesQueryDTO,
+  ): Promise<OffsetPaginatedResultVM<{ stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }>> {
+    return this.casesService.getAllCasesByAllStages(query);
   }
 
   @Post()

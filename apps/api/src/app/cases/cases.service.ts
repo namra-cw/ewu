@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { buildPaginatedResult, type OffsetPaginatedResultVM } from '@mediastar/shared';
+
 import { CaseRepository } from './cases.repository';
 import { ICaseMutationResult } from './interfaces/case.interface';
-import { CreateCaseDTO } from './dtos/create-case.dto';
-import { DragCaseDTO } from './dtos/drag-case.dto';
-import { UpdateCaseDTO } from './dtos/update-case.dto';
+import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos';
 
 const CASE_NOT_FOUND = 'Case not found';
 
@@ -11,10 +11,24 @@ const CASE_NOT_FOUND = 'Case not found';
 export class CasesService {
   constructor(private readonly caseRepository: CaseRepository) {}
 
-  async getAllCasesByAllStages(): Promise<
-    { stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }[]
+  async getAllCases(
+    query: CasesQueryDTO,
+  ): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
+    const [data, total] = await this.caseRepository.findMany(query);
+    return buildPaginatedResult(data, total, query);
+  }
+
+  async getAllCasesByAllStages(
+    query: CasesQueryDTO,
+  ): Promise<
+    OffsetPaginatedResultVM<{
+      stageId: number | null;
+      stageTitle: string | null;
+      cases: ICaseMutationResult[];
+    }>
   > {
-    return this.caseRepository.getAllCasesByAllStages();
+    const [data, total] = await this.caseRepository.getAllCasesByAllStages(query);
+    return buildPaginatedResult(data, total, query);
   }
 
   async create(dto: CreateCaseDTO): Promise<ICaseMutationResult> {

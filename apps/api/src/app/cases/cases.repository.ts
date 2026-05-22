@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { buildPaginationArgs, type OffsetPaginationDTO } from '@mediastar/shared';
 import { DatabaseService, Prisma } from '@mediastar/database';
 import {
   ICaseMutationResult,
   ICreateCaseRequest,
+  IGroupedCasesByStage,
   IUpdateCaseRequest,
 } from './interfaces/case.interface';
 
@@ -59,37 +61,60 @@ export class CaseRepository {
     }) as Promise<ICaseMutationResult | null>;
   }
 
-  public async findAll(): Promise<ICaseMutationResult[]> {
-    return this.db.case.findMany({
-      select: CASE_MUTATION_SELECT,
-    }) as Promise<ICaseMutationResult[]>;
+  public async findMany(
+    query: OffsetPaginationDTO & { stageId?: number },
+  ): Promise<[ICaseMutationResult[], number]> {
+    const { skip, take } = buildPaginationArgs(query);
+    const where: Prisma.CaseWhereInput = {
+      ...(query.stageId != null && { stageId: query.stageId }),
+    };
+
+    const [data, total] = await Promise.all([
+      this.db.case.findMany({
+        where,
+        select: CASE_MUTATION_SELECT,
+        skip,
+        take,
+        orderBy: { id: query.sort ?? 'desc' },
+      }),
+      this.db.case.count({ where }),
+    ]);
+
+    return [data as ICaseMutationResult[], total];
   }
 
-  public async getCasesByStageId(stageId: number): Promise<ICaseMutationResult[]> {
-    return this.db.case.findMany({
-      where: { stageId },
-      select: CASE_MUTATION_SELECT,
-    }) as Promise<ICaseMutationResult[]>;
-  }
+  public async getAllCasesByAllStages(
+    query: OffsetPaginationDTO & { caseLimit?: number },
+  ): Promise<[IGroupedCasesByStage[], number]> {
+    const { skip, take } = buildPaginationArgs(query);
+    const caseLimit = query.caseLimit ?? take;
 
-  public async getAllCasesByAllStages(): Promise<
-    { stageId: number | null; stageTitle: string | null; cases: ICaseMutationResult[] }[]
-  > {
-    const stagesWithCases = await this.db.stages.findMany({
-      select: {
-        id: true,
-        stageTitle: true,
-        case: {
-          select: CASE_MUTATION_SELECT,
+    const [stagesWithCases, total] = await Promise.all([
+      this.db.stages.findMany({
+        select: {
+          id: true,
+          stageTitle: true,
+          case: {
+            select: CASE_MUTATION_SELECT,
+            take: caseLimit,
+            orderBy: { id: query.sort ?? 'desc' },
+          },
         },
-      },
-    });
+        skip,
+        take,
+        orderBy: { id: query.sort ?? 'desc' },
+      }),
+      this.db.stages.count(),
+    ]);
 
-    return stagesWithCases.map((stage) => ({
-      stageId: stage.id,
-      stageTitle: stage.stageTitle,
-      cases: stage.case as ICaseMutationResult[],
-    }));
+    return [
+      stagesWithCases.map((stage) => ({
+        stageId: stage.id,
+        stageTitle: stage.stageTitle,
+        cases: stage.case as ICaseMutationResult[],
+      })),
+      total,
+    ];
   }
 
   public async stageExists(stageId: number): Promise<boolean> {

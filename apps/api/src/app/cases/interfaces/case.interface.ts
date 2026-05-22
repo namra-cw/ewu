@@ -20,6 +20,12 @@ export interface ICaseStage {
   stageTitle: string;
 }
 
+export interface IGroupedCasesByStage {
+  stageId: number | null;
+  stageTitle: string | null;
+  cases: ICaseMutationResult[];
+}
+
 export interface ICreateCaseRequest {
   subjectName: string;
   age?: number | null;

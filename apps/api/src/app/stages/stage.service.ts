@@ -4,6 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  buildPaginatedResult,
+  type OffsetPaginatedResultVM,
+  type OffsetPaginationDTO,
+} from '@mediastar/shared';
 
 import { CreateStageDTO } from './dtos';
 import type { IStageMutationResult } from './interfaces/stage.interface';
@@ -15,8 +20,11 @@ const STAGE_NOT_FOUND = 'Stage not found';
 export class StageService {
   constructor(private readonly stageRepository: StageRepository) {}
 
-  async getAllStages(): Promise<IStageMutationResult[]> {
-    return this.stageRepository.getAllStages();
+  async getAllStages(
+    query: OffsetPaginationDTO,
+  ): Promise<OffsetPaginatedResultVM<IStageMutationResult>> {
+    const [data, total] = await this.stageRepository.findMany(query);
+    return buildPaginatedResult(data, total, query);
   }
 
   async create(dto: CreateStageDTO): Promise<IStageMutationResult> {

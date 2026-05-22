@@ -6,8 +6,24 @@ import {
   perm,
   PermissionAction as A,
 } from '@mediastar/core';
-import { ApiStandardErrors, ApiWrappedResponse, ErrorResponseVM } from '@mediastar/shared';
-import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  ApiStandardErrors,
+  ApiWrappedResponse,
+  ErrorResponseVM,
+  OffsetPaginationDTO,
+  type OffsetPaginatedResultVM,
+} from '@mediastar/shared';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 
@@ -25,21 +41,33 @@ export class StageController {
   @Permissions(perm(M.Stages, A.Read))
   @ApiOperation({ summary: 'Get all stages' })
   @ApiWrappedResponse({
-	description: 'List of stages',
-	dataSchema: {
-	  type: 'array',
-	  items: {
-		type: 'object',
-		properties: {
-		  id: { type: 'number' },
-		  stageTitle: { type: 'string' },
-		},
-		required: ['id', 'stageTitle'],
-	  },
-	},
+    description: 'Paginated list of stages',
+    dataSchema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              stageTitle: { type: 'string' },
+            },
+            required: ['id', 'stageTitle'],
+          },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+      required: ['data', 'total', 'page', 'limit', 'totalPages'],
+    },
   })
-  getAllStages(): Promise<IStageMutationResult[]> {
-	return this.stageService.getAllStages();
+  getAllStages(
+    @Query() query: OffsetPaginationDTO,
+  ): Promise<OffsetPaginatedResultVM<IStageMutationResult>> {
+    return this.stageService.getAllStages(query);
   }
 
   @Post()
