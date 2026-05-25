@@ -1,8 +1,8 @@
 import { type CasesQueryDTO } from '../dtos';
-import { buildCasesAssigneeFilter } from './cases-assignee-filter.util';
-import { buildCasesCreatedAtFilter } from './cases-created-at-filter.util';
-import { buildCasesPrTeamFilter } from './cases-pr-filter.util';
-import { buildCasesPriorityFilter } from './cases-priority-filter.util';
+import { buildCasesAssigneeFilter } from './filter/cases-assignee-filter.util';
+import { buildCasesCreatedAtFilter } from './filter/cases-created-at-filter.util';
+import { buildCasesPrTeamFilter } from './filter/cases-pr-filter.util';
+import { buildCasesPriorityFilter } from './filter/cases-priority-filter.util';
 
 import { Prisma } from '@mediastar/database';
 
