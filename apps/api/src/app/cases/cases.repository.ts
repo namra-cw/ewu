@@ -164,15 +164,17 @@ export class CaseRepository {
     query: CasesQueryDTO,
   ): Promise<[ICaseMutationResult[], number]> {
     const { skip, take } = buildPaginationArgs(query);
+    const where = buildCasesWhere(query);
 
     const [data, total] = await Promise.all([
       this.db.case.findMany({
+        where,
         select: CASE_MUTATION_SELECT,
         skip,
         take,
         orderBy: { id: query.sort ?? 'desc' },
       }),
-      this.db.case.count(),
+      this.db.case.count({ where }),
     ]);
 
     return [data as ICaseMutationResult[], total];
@@ -187,7 +189,7 @@ export class CaseRepository {
       ? query.displayPropertiesFilter
       : CASE_DISPLAY_PROPERTIES.filter((property) => property.selected).map((property) => property.key);
 
-    const [stagesWithCases, total] = await Promise.all([
+    const [stagesWithCases, total, stageCounts] = await Promise.all([
       this.db.stages.findMany({
         select: {
           id: true,
@@ -205,13 +207,24 @@ export class CaseRepository {
         orderBy: { id: query.sort ?? 'desc' },
       }),
       this.db.stages.count(),
+      this.db.case.groupBy({
+        by: ['stageId'],
+        where: buildCasesWhere(query),
+        _count: {
+          _all: true,
+        },
+      }),
     ]);
+
+    const caseCountByStageId = new Map<number | null, number>(
+      stageCounts.map((group) => [group.stageId, group._count._all]),
+    );
 
     return [
       stagesWithCases.map((stage) => ({
         stageId: stage.id,
         stageTitle: stage.stageTitle,
-        caseCount: stage.caseCount,
+        caseCount: caseCountByStageId.get(stage.id) ?? 0,
         cases: (stage.case as ICaseMutationResult[]).map((caseRecord) =>
           this.toDisplayCase(caseRecord, displayProperties),
         ),

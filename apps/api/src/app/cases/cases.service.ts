@@ -4,8 +4,8 @@ import { buildPaginatedResult, type OffsetPaginatedResultVM } from '@mediastar/s
 import { CaseRepository } from './cases.repository';
 import {
   ICaseDisplayProperty,
-  ICaseDisplayResult,
   ICaseMutationResult,
+  IGroupedCasesByStage,
 } from './interfaces/case.interface';
 import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos';
 
@@ -22,14 +22,16 @@ export class CasesService {
     return buildPaginatedResult(data, total, query);
   }
 
+  async searchCases(
+    query: CasesQueryDTO,
+  ): Promise<OffsetPaginatedResultVM<IGroupedCasesByStage>> {
+    return this.getAllCasesByAllStages(query);
+  }
+
   async getAllCasesByAllStages(
     query: CasesQueryDTO,
   ): Promise<
-    OffsetPaginatedResultVM<{
-      stageId: number | null;
-      stageTitle: string | null;
-      cases: ICaseDisplayResult[];
-    }>
+    OffsetPaginatedResultVM<IGroupedCasesByStage>
   > {
     const [data, total] = await this.caseRepository.getAllCasesByAllStages(query);
     return buildPaginatedResult(data, total, query);

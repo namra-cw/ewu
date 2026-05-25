@@ -22,8 +22,8 @@ import { CasesQueryDTO, CreateCaseDTO, DragCaseDTO, UpdateCaseDTO } from './dtos
 import { CasesService } from './cases.service';
 import {
   ICaseDisplayProperty,
-  ICaseDisplayResult,
   ICaseMutationResult,
+  IGroupedCasesByStage,
 } from './interfaces/case.interface';
 
 @ApiTags('Cases')
@@ -63,7 +63,75 @@ export class CasesController {
   ): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
     return this.casesService.getAllCases(query);
   }
-  
+
+  @Post('search')
+  @ApiOperation({ summary: 'Search cases by stage' })
+  @ApiBody({
+    type: CasesQueryDTO,
+    examples: {
+      default: {
+        summary: 'Sample search request',
+        value: {
+          page: 1,
+          limit: 10,
+          search: 'rohan',
+          sort: 'desc',
+          displayPropertiesFilter: [
+            'id',
+            'subjectName',
+            'caseSummary',
+            'incidentType',
+            'priority',
+            'createdAt',
+          ],
+        },
+      },
+    },
+  })
+  @ApiWrappedResponse({
+    description: 'Paginated list of matched cases grouped by stage',
+    dataSchema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              stageId: { type: 'number', nullable: true },
+              stageTitle: { type: 'string', nullable: true },
+              caseCount: { type: 'number' },
+              cases: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    subjectName: { type: 'string' },
+                  },
+                  required: ['id', 'subjectName'],
+                },
+              },
+            },
+            required: ['stageId', 'stageTitle', 'caseCount', 'cases'],
+          },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+      required: ['data', 'total', 'page', 'limit', 'totalPages'],
+    },
+  })
+  searchCases(
+    @Body() query: CasesQueryDTO,
+  ): Promise<
+    OffsetPaginatedResultVM<IGroupedCasesByStage>
+  > {
+    return this.casesService.searchCases(query);
+  }
+
   @Post('by-stages')
   @ApiOperation({ summary: 'Get cases by stages' })
   @ApiBody({
@@ -86,6 +154,7 @@ export class CasesController {
           displayPropertiesFilter: [
             'id',
             'subjectName',
+            'caseSummary',
             'incidentType',
             'stage',
             'priority',
@@ -107,6 +176,7 @@ export class CasesController {
             properties: {
               stageId: { type: 'number', nullable: true },
               stageTitle: { type: 'string', nullable: true },
+              caseCount: { type: 'number' },
               cases: {
                 type: 'array',
                 items: {
@@ -119,7 +189,7 @@ export class CasesController {
                 },
               },
             },
-            required: ['stageId', 'stageTitle', 'cases'],
+            required: ['stageId', 'stageTitle', 'caseCount', 'cases'],
           },
         },
         total: { type: 'number' },
@@ -132,7 +202,9 @@ export class CasesController {
   })
   getAllByStages(
     @Body() query: CasesQueryDTO,
-  ): Promise<OffsetPaginatedResultVM<{ stageId: number | null; stageTitle: string | null; cases: ICaseDisplayResult[] }>> {
+  ): Promise<
+    OffsetPaginatedResultVM<IGroupedCasesByStage>
+  > {
     return this.casesService.getAllCasesByAllStages(query);
   }
 

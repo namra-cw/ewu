@@ -2,7 +2,7 @@ import { OffsetPaginationDTO } from '@mediastar/shared';
 import { PAGINATION_DEFAULTS } from '@mediastar/core';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsDate, IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 import { CaseSource, Priority } from '../../../../../../../ewu_task/libs/database/src/lib/generated/prisma/client';
 
@@ -16,6 +16,19 @@ export class CasesQueryDTO extends OffsetPaginationDTO {
   @Min(1)
   @Type(() => Number)
   stageId?: number;
+
+  @ApiPropertyOptional({ description: 'Search cases by subject', example: 'john doe' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    return String(value).trim();
+  })
+  search?: string;
 
   @ApiPropertyOptional({ description: 'Filter cases created on or after this date', example: '2026-01-01T00:00:00.000Z' })
   @IsOptional()

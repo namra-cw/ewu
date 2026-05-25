@@ -510,11 +510,15 @@ model Case {
   dueDate DateTime?
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   casePriority String?
   caseSource CaseSource
 
   priority Priority @default(MEDIUM)
+
+  @@index([subjectName(ops: raw("gin_trgm_ops"))], map: "idx_case_subject_name_trgm", type: Gin)
+  @@index([caseSummary(ops: raw("gin_trgm_ops"))], map: "idx_case_summary_trgm", type: Gin)
 }
 
 // ---------------------------------------------------------------------------

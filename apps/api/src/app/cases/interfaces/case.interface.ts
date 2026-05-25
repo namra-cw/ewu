@@ -91,6 +91,7 @@ export interface ICaseDisplayResult {
 export interface IGroupedCasesByStage {
   stageId: number | null;
   stageTitle: string | null;
+  caseCount: number;
   cases: ICaseDisplayResult[];
 }
 
