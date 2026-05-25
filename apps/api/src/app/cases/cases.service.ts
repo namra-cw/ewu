@@ -22,6 +22,18 @@ export class CasesService {
     return buildPaginatedResult(data, total, query);
   }
 
+  async getCasesByStage(
+    stageId: number,
+    query: CasesQueryDTO,
+  ): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
+    const [data, total] = await this.caseRepository.findMany({
+      ...query,
+      stageId,
+    });
+
+    return buildPaginatedResult(data, total, query);
+  }
+
   async searchCases(
     query: CasesQueryDTO,
   ): Promise<OffsetPaginatedResultVM<IGroupedCasesByStage>> {

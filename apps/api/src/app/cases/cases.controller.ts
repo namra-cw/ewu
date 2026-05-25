@@ -15,6 +15,7 @@ import {
   Patch,
   Post,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -62,6 +63,40 @@ export class CasesController {
     @Query() query: CasesQueryDTO,
   ): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
     return this.casesService.getAllCases(query);
+  }
+
+  @Post('stage')
+  @ApiOperation({ summary: 'Get cases by stage' })
+  @ApiBody({ type: CasesQueryDTO })
+  @ApiWrappedResponse({
+    description: 'Paginated list of cases for a single stage',
+    dataSchema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              subjectName: { type: 'string' },
+            },
+            required: ['id', 'subjectName'],
+          },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+      required: ['data', 'total', 'page', 'limit', 'totalPages'],
+    },
+  })
+  getCasesByStage(@Body() query: CasesQueryDTO): Promise<OffsetPaginatedResultVM<ICaseMutationResult>> {
+    if (query.stageId == null) {
+      throw new BadRequestException('stageId is required in request body');
+    }
+    return this.casesService.getCasesByStage(query.stageId, query);
   }
 
   @Post('search')
