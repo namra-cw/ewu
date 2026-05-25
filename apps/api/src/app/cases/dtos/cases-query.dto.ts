@@ -2,9 +2,9 @@ import { OffsetPaginationDTO } from '@mediastar/shared';
 import { PAGINATION_DEFAULTS } from '@mediastar/core';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsDate, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
-import { Priority } from '../../../../../../../ewu_task/libs/database/src/lib/generated/prisma/client';
+import { CaseSource, Priority } from '../../../../../../../ewu_task/libs/database/src/lib/generated/prisma/client';
 
 import { CASE_DISPLAY_PROPERTIES, type CaseDisplayPropertyKey } from '../interfaces/case.interface';
 import { CASE_ORDER_BY_FIELDS, type CaseOrderByField } from '../utils/cases-order.util';
@@ -80,6 +80,18 @@ export class CasesQueryDTO extends OffsetPaginationDTO {
   @Max(PAGINATION_DEFAULTS.MAX_LIMIT)
   @Type(() => Number)
   caseLimit?: number = PAGINATION_DEFAULTS.LIMIT;
+
+  @IsOptional()
+  @IsEnum(CaseSource, { each: true })
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    const values = Array.isArray(value) ? value : String(value).split(',');
+    return values.map((item) => String(item).trim()).filter(Boolean);
+  })
+  caseSource?: CaseSource[];
 
   @ApiPropertyOptional({
     description:

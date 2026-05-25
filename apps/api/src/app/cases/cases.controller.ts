@@ -80,6 +80,7 @@ export class CasesController {
           stageId: 2,
           createdAtFrom: '2026-01-01T00:00:00.000Z',
           createdAtTo: '2026-01-31T23:59:59.999Z',
+          caseSource: ['PR_TEAM'],
           priority: ['HIGH', 'MEDIUM'],
           assigneeIds: [3, 7],
           displayPropertiesFilter: [

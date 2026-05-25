@@ -411,4 +411,13 @@ export class CaseRepository {
   public async displayPropertiesFilter(): Promise<ICaseDisplayProperty[]> {
     return [...CASE_DISPLAY_PROPERTIES];
   }
+
+  public async prTeamFilter(pr_team?: string[]): Promise<Prisma.CaseWhereInput | undefined> {
+    if (!pr_team || pr_team.length === 0) {
+      return undefined;
+    }
+
+    return {
+    };
+  }
 }
